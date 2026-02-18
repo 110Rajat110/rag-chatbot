@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+pydantic>=2.0
+pydantic-settings
+sqlalchemy
+passlib
+bcrypt
+python-jose[cryptography]
+python-multipart
+chromadb>=0.4.15
+langchain
+langchain-ollama
+langchain-chroma
+pypdf
+python-dotenv
+email-validator
