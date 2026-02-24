@@ -24,7 +24,7 @@ if not os.path.exists(CHROMA_DB_DIR):
 embeddings = OllamaEmbeddings(base_url=OLLAMA_URL, model=MODEL_NAME)
 vector_db = Chroma(persist_directory=CHROMA_DB_DIR, embedding_function=embeddings)
 
-def process_document(file_path: str, progress_callback=None):
+def process_document(file_path: str):
     """Chunks and embeds a document into ChromaDB with intelligent chunking."""
     print(f"Processing document: {file_path}")
     
@@ -82,44 +82,20 @@ def process_document(file_path: str, progress_callback=None):
         # Process in batches to avoid memory issues
         batch_size = 50  # Smaller batches for better error handling
         total_processed = 0
-        total_batches = (len(meaningful_chunks) + batch_size - 1) // batch_size
         
         for i in range(0, len(meaningful_chunks), batch_size):
-            batch_num = i // batch_size + 1
             batch = meaningful_chunks[i:i + batch_size]
             try:
                 vector_db.add_documents(batch)
                 total_processed += len(batch)
-                print(f"Processed batch {batch_num}/{total_batches}: {len(batch)} chunks")
-                
-                # Send progress update
-                if progress_callback:
-                    progress_callback({
-                        'type': 'progress',
-                        'current': total_processed,
-                        'total': len(meaningful_chunks),
-                        'batch': batch_num,
-                        'total_batches': total_batches,
-                        'batch_size': len(batch)
-                    })
-                    
+                print(f"Processed batch {i//batch_size + 1}: {len(batch)} chunks")
             except Exception as e:
-                print(f"Error processing batch {batch_num}: {e}")
+                print(f"Error processing batch {i//batch_size}: {e}")
                 # Try individual chunks if batch fails
                 for chunk in batch:
                     try:
                         vector_db.add_documents([chunk])
                         total_processed += 1
-                        # Send progress update for individual chunk
-                        if progress_callback:
-                            progress_callback({
-                                'type': 'progress',
-                                'current': total_processed,
-                                'total': len(meaningful_chunks),
-                                'batch': batch_num,
-                                'total_batches': total_batches,
-                                'batch_size': 1
-                            })
                     except Exception as chunk_error:
                         print(f"Error processing individual chunk: {chunk_error}")
         
@@ -143,28 +119,14 @@ def build_prompt(question: str, context: str, history: List[dict] = None):
 CONTEXT (Top Documents):
 {context}
 
-QUESTION: {question}
+RULES:
+1. Answer the question using ONLY the context provided above.
+2. If the context describes a concept but uses different terminology (e.g., 'Split Cache' for 'Harvard Architecture'), bridge the terms CLEARLY.
+3. If the answer is not in the context, state: "The provided context does not contain this information." 
+4. Do not guess. If terms are missing, say so.
 
-IMPORTANT FORMATTING INSTRUCTIONS:
-- Structure your response with clear visual hierarchy
-- Use bullet points (• or *) for lists of items
-- Use numbered lists (1., 2., 3.) for sequential information
-- Use bold text (**important terms**) for key concepts
-- Use headers (## Topic Name) for main sections
-- Keep paragraphs concise (2-3 sentences max)
-- Mix formatting styles for better readability
-- Include examples when helpful
-
-RESPONSE GUIDELINES:
-1. Start with a clear, direct answer
-2. Use bullet points for lists of features, components, or characteristics
-3. Use numbered lists for steps, sequences, or ordered information
-4. Bold key technical terms and important concepts
-5. Use headers to organize major topics
-6. Keep sentences clear and concise
-7. Mix paragraphs with lists for visual variety
-
-Provide a comprehensive but well-structured response based on the context above."""
+User Question: {question}
+Answer:"""
 
 def get_streaming_ai_response(question: str, history: List[dict] = None):
     """Generates a streaming AI response and yields text chunks."""

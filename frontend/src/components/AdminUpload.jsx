@@ -5,7 +5,6 @@ import { Upload, FileText, CheckCircle2, AlertCircle, Trash2, Database, Users, M
 const AdminUpload = () => {
     const [file, setFile] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
-    const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0, batch: 0, total_batches: 0 });
     const [status, setStatus] = useState(null); // { type: 'success' | 'error', message: string }
     const [stats, setStats] = useState({ documents_count: 0 });
     const [uploadedFiles, setUploadedFiles] = useState([]);
@@ -43,93 +42,21 @@ const AdminUpload = () => {
         if (!file) return;
 
         setIsUploading(true);
-        setUploadProgress({ current: 0, total: 0, batch: 0, total_batches: 0 });
-        setStatus(null);
-
         const formData = new FormData();
         formData.append('file', file);
 
         try {
-            // Create a unique session ID for this upload
-            const uploadId = Date.now().toString();
-            
-            // Start the upload
-            const response = await api.post(`/admin/upload-progress/${uploadId}`, formData, {
+            await api.post('/admin/upload', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-
-            if (response.data.status !== 'started') {
-                throw new Error('Failed to start upload');
-            }
-
-            // Poll for progress updates
-            const pollProgress = async () => {
-                try {
-                    const progressResponse = await api.get(`/admin/upload-progress/${uploadId}`);
-                    const data = progressResponse.data;
-                    
-                    switch (data.type) {
-                        case 'start':
-                            setStatus({ type: 'info', message: `Starting to process: ${data.filename}` });
-                            break;
-                        
-                        case 'progress':
-                            setUploadProgress({
-                                current: data.current,
-                                total: data.total,
-                                batch: data.batch,
-                                total_batches: data.total_batches
-                            });
-                            setStatus({ 
-                                type: 'info', 
-                                message: `Processing batch ${data.batch}/${data.total_batches}: ${data.current}/${data.total} chunks` 
-                            });
-                            break;
-                        
-                        case 'complete':
-                            setUploadProgress({ current: data.total, total: data.total, batch: data.total_batches, total_batches: data.total_batches });
-                            setStatus({ type: 'success', message: `Successfully processed ${data.chunks} chunks from ${data.filename}` });
-                            setFile(null);
-                            fetchStats();
-                            fetchFiles();
-                            setIsUploading(false);
-                            return; // Stop polling
-                            
-                        case 'error':
-                            setStatus({ type: 'error', message: `Error: ${data.message}` });
-                            setIsUploading(false);
-                            return; // Stop polling
-                            
-                        case 'pending':
-                            // Still processing, continue polling
-                            break;
-                    }
-                    
-                    // Continue polling if still uploading
-                    if (isUploading) {
-                        setTimeout(pollProgress, 500); // Poll every 500ms
-                    }
-                } catch (error) {
-                    console.error('Progress polling error:', error);
-                    if (error.response?.status === 404) {
-                        // Upload not found, might be completed
-                        setStatus({ type: 'success', message: 'Upload completed' });
-                        setIsUploading(false);
-                        fetchStats();
-                        fetchFiles();
-                    } else {
-                        setStatus({ type: 'error', message: 'Error checking progress' });
-                        setIsUploading(false);
-                    }
-                }
-            };
-
-            // Start polling after a short delay
-            setTimeout(pollProgress, 100);
-
+            setStatus({ type: 'success', message: `Kernel expansion successful: ${file.name} integrated.` });
+            setFile(null);
+            fetchStats();
+            fetchFiles();
         } catch (err) {
-            const errorMsg = err.response?.data?.detail || err.message || 'System integration failed. Check backend logs.';
+            const errorMsg = err.response?.data?.detail || 'System integration failed. Check backend logs.';
             setStatus({ type: 'error', message: errorMsg });
+        } finally {
             setIsUploading(false);
         }
     };
@@ -233,29 +160,9 @@ const AdminUpload = () => {
                         </div>
 
                         {status && (
-                            <div className={`p-4 rounded-lg flex items-center gap-3 ${status.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : status.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
-                                {status.type === 'success' ? <CheckCircle2 size={20} /> : status.type === 'error' ? <AlertCircle size={20} /> : <RefreshCw size={20} className="animate-spin" />}
+                            <div className={`p-4 rounded-lg flex items-center gap-3 ${status.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                                {status.type === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
                                 <span className="text-sm font-medium">{status.message}</span>
-                            </div>
-                        )}
-
-                        {isUploading && uploadProgress.total > 0 && (
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between text-sm">
-                                    <span className="text-gray-600">Processing chunks</span>
-                                    <span className="font-medium text-gray-900">{uploadProgress.current}/{uploadProgress.total}</span>
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                    <div 
-                                        className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                                        style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}
-                                    ></div>
-                                </div>
-                                {uploadProgress.total_batches > 0 && (
-                                    <div className="text-xs text-gray-500 text-center">
-                                        Batch {uploadProgress.batch}/{uploadProgress.total_batches}
-                                    </div>
-                                )}
                             </div>
                         )}
 

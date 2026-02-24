@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import api from '../utils/api';
-import { Send, Bot, User as UserIcon } from 'lucide-react';
-import { parseResponse, renderContent } from '../utils/responseFormatter.jsx';
+import { Send, User as UserIcon, Bot, Sparkles, RefreshCw, Zap } from 'lucide-react';
 
 const Chat = ({ sessionId, onNewChat }) => {
     const [messages, setMessages] = useState([]);
@@ -120,17 +119,20 @@ const Chat = ({ sessionId, onNewChat }) => {
             {/* Messages area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth">
                 {messages.length === 0 && !isLoading && (
-                    <div className="h-full flex flex-col items-center justify-center text-gray-500 space-y-6">
-                        <div className="relative">
-                            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg">
-                                <Bot size={28} className="text-gray-600" />
-                            </div>
-                        </div>
-                        <div className="text-center space-y-2 max-w-sm">
-                            <h3 className="text-lg font-semibold text-gray-800">Chat Assistant</h3>
-                            <p className="text-sm">
-                                Ask questions about your uploaded documents.
+                    <div className="h-full flex flex-col items-center justify-center text-gray-500 space-y-8">
+                        <div className="text-center space-y-6 max-w-md">
+                            <h3 className="text-xl font-bold text-gray-800">
+                                AI Research Assistant
+                            </h3>
+                            <p className="text-sm text-gray-600">
+                                Ask questions about your uploaded documents and get intelligent, source-backed answers instantly
                             </p>
+                            <div className="flex items-center justify-center gap-4 pt-4">
+                                <div className="flex items-center gap-2 text-sm text-gray-500">
+                                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    <span>Ready to help</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -147,49 +149,79 @@ const Chat = ({ sessionId, onNewChat }) => {
                             </div>
                             
                             {/* Message bubble */}
-                            <div className={`px-4 py-2 rounded-2xl text-sm font-normal leading-relaxed ${m.role === 'user'
-                                ? 'bg-blue-500 text-white rounded-br-sm'
-                                : 'bg-gray-200 text-gray-800 rounded-bl-sm'
+                            <div className={`px-5 py-3 rounded-2xl text-sm leading-relaxed ${m.role === 'user'
+                                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-sm shadow-lg'
+                                : 'bg-gradient-to-r from-gray-100 to-gray-50 text-gray-800 rounded-bl-sm shadow-md border border-gray-200'
                                 }`}
-                                style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' }}>
-                                {m.role === 'ai' ? (
-                                    <div className="space-y-2">
-                                        {renderContent(parseResponse(m.content))}
-                                    </div>
-                                ) : (
-                                    m.content
-                                )}
+                                style={{ 
+                                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                                    fontWeight: '400',
+                                    lineHeight: '1.6'
+                                }}>
+                                <div className="space-y-2">
+                                    {m.content.split('\n').map((paragraph, pIdx) => (
+                                        <div key={pIdx} className={pIdx === 0 ? '' : 'mt-2'}>
+                                            {paragraph.split(/(\*\*|##|###|__|``)/).map((segment, sIdx) => (
+                                                <span key={sIdx}>
+                                                    {sIdx > 0 && ' '}
+                                                    {segment.match(/^(\*\*|##|###|__|``)$/) ? (
+                                                        <span className="font-bold text-gray-900">{segment}</span>
+                                                    ) : (
+                                                        <span>{segment}</span>
+                                                    )}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    ))}
+                                </div>
 
                                 {m.role === 'ai' && m.sources && m.sources.length > 0 && (
-                                    <div className="mt-3 pt-2 border-t border-gray-300">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <p className="text-xs font-medium text-gray-600">
-                                                Sources ({m.sources.length})
-                                            </p>
+                                    <div className="mt-4 pt-3 border-t border-gray-200">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                                                <p className="text-sm font-semibold text-gray-700">
+                                                    📚 Sources ({m.sources.length})
+                                                </p>
+                                            </div>
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    const sourcesDiv = e.currentTarget.closest('.mt-3').querySelector('.sources-content');
-                                                    sourcesDiv.classList.toggle('hidden');
+                                                    const sourcesDiv = e.currentTarget.closest('.mt-4').querySelector('.sources-content');
+                                                    if (sourcesDiv) {
+                                                        sourcesDiv.classList.toggle('hidden');
+                                                    }
                                                 }}
-                                                className="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"
+                                                className="text-sm text-blue-500 hover:text-blue-600 flex items-center gap-2 px-3 py-1 rounded-lg hover:bg-blue-50 transition-all"
                                             >
-                                                <span>Show</span>
-                                                <svg className="w-3 h-3 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <span>🔍 Show</span>
+                                                <svg className="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                                 </svg>
                                             </button>
                                         </div>
-                                        <div className="sources-content hidden space-y-2">
+                                        <div className="sources-content hidden space-y-3">
                                             {m.sources.map((src, sIdx) => (
-                                                <div key={sIdx} className="px-3 py-2 bg-white rounded-lg border border-gray-200 hover:border-gray-300 transition-colors cursor-pointer">
+                                                <div key={sIdx} className="group px-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 cursor-pointer">
                                                     <div className="flex items-center justify-between">
-                                                        <span className="text-xs font-medium text-gray-700">
-                                                            {src}
-                                                        </span>
-                                                        <span className="text-xs text-gray-500">
-                                                            Page {src.match(/p\. (\d+)/)?.[1] || 'N/A'}
-                                                        </span>
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">
+                                                                📄
+                                                            </div>
+                                                            <div>
+                                                                <span className="text-sm font-semibold text-gray-800">
+                                                                    {src}
+                                                                </span>
+                                                                <div className="text-xs text-gray-500 mt-1">
+                                                                    Page {src.match(/p\. (\d+)/)?.[1] || 'N/A'}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V8a2 2 0 00-2-2h-4zm4 0H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V8a2 2 0 00-2-2h-4z" />
+                                                            </svg>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             ))}
@@ -203,14 +235,19 @@ const Chat = ({ sessionId, onNewChat }) => {
 
                 {isLoading && (
                     <div className="flex justify-start animate-in fade-in duration-300">
-                        <div className="flex gap-2 max-w-[80%]">
+                        <div className="flex gap-3 max-w-[80%]">
                             <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mr-2">
                                 <Bot size={16} className="text-gray-600" />
                             </div>
-                            <div className="bg-gray-200 px-4 py-2 rounded-2xl rounded-bl-sm flex gap-1.5 items-center">
-                                <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-duration:1s]"></span>
-                                <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-duration:1s] [animation-delay:0.2s]"></span>
-                                <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-duration:1s] [animation-delay:0.4s]"></span>
+                            <div className="bg-gray-200 px-4 py-3 rounded-2xl rounded-bl-sm flex gap-2 items-center">
+                                <div className="flex space-x-1">
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                                </div>
+                                <div className="text-sm text-gray-600 ml-2">
+                                    <span className="font-medium">AI is thinking...</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -219,27 +256,35 @@ const Chat = ({ sessionId, onNewChat }) => {
             </div>
 
             {/* Input area */}
-            <div className="p-4 bg-white border-t border-gray-200 transition-all duration-500">
+            <div className="p-6 bg-gradient-to-r from-white to-gray-50 border-t border-gray-200 transition-all duration-500">
                 <form onSubmit={handleSend} className="relative max-w-4xl mx-auto">
-                    <input
-                        type="text"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        disabled={isLoading}
-                        placeholder="Type your message..."
-                        className="w-full px-4 py-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-full focus:outline-none focus:border-blue-400 transition-all"
-                        style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' }}
-                    />
-                    <button
-                        type="submit"
-                        disabled={isLoading || !input.trim()}
-                        className={`absolute right-2 top-2 p-2 rounded-full transition-all ${isLoading || !input.trim()
-                            ? 'bg-gray-300 text-gray-500'
-                            : 'bg-blue-500 text-white hover:bg-blue-600'
-                            }`}
-                    >
-                        <Send size={18} />
-                    </button>
+                    <div className="relative group">
+                        <input
+                            type="text"
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            disabled={isLoading}
+                            placeholder="Ask anything"
+                            className="w-full px-6 py-4 pr-14 bg-white text-gray-800 border-2 border-gray-300 rounded-2xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all text-base shadow-sm hover:shadow-md"
+                            style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' }}
+                        />
+                        <button
+                            type="submit"
+                            disabled={isLoading || !input.trim()}
+                            className={`absolute right-2 top-2 p-3 rounded-xl transition-all transform hover:scale-105 ${isLoading || !input.trim()
+                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg hover:shadow-xl hover:from-blue-600 hover:to-blue-700'
+                                }`}
+                        >
+                            {isLoading ? (
+                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 2 2 9 18z" />
+                                </svg>
+                            )}
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>

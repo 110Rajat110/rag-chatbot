@@ -1,93 +1,38 @@
-# Secure RAG Chatbot
+# Secure# RAG Chatbot
 
-A high-performance, local-first RAG (Retrieval-Augmented Generation) chatbot designed for secure document analysis.
+A modern WhatsApp-style RAG (Retrieval-Augmented Generation) chatbot with local LLM integration.
 
-## 🚀 Quick Start
+## Features
 
-### 1. Prerequisites
-- **Node.js**: v18+ 
-- **Python**: v3.9+
-- **Ollama**: [Download Ollama](https://ollama.com/) and ensure it is running.
+- **AI-Powered Chat**: Local Ollama LLM integration
+- **Document RAG**: ChromaDB vector store with intelligent retrieval
+- **WhatsApp-Style UI**: Beautiful, minimal chat interface
+- **Document Management**: Upload, process, and manage documents
+- **Source Citations**: Automatic source references with page numbers
+- **Real-time Streaming**: Instant AI responses
+- **Modern Design**: Clean, responsive interface with animations
 
-### 2. Setup Ollama
-Download the memory-efficient model:
-```bash
-ollama pull qwen2.5:1.5b-instruct
-```
-
-### 3. Run Setup Script (Windows)
-```powershell
-./setup.ps1
-```
-
-### 4. Start Application
-**Backend:**
-```powershell
-cd backend
-.\venv\Scripts\activate
-python main.py
-```
-
-**Frontend:**
-```powershell
-cd frontend
-npm run dev
-```
+## Tech Stack
 
 ### Backend
 - **FastAPI**: Modern Python web framework
-- **SQLAlchemy**: Database ORM with SQLite
-- **JWT**: Secure authentication
-- **Ollama**: Local AI integration (Qwen2.5:1.5B)
-- **ChromaDB**: Vector database for embeddings
-- **LangChain**: Document processing and RAG pipeline
+- **SQLAlchemy**: ORM for database management
+- **ChromaDB**: Vector database for document storage
+- **LangChain**: Document processing and embeddings
+- **Ollama**: Local LLM integration
 
 ### Frontend
-- **React 18**: Modern UI framework
-- **Tailwind CSS**: Utility-first styling
-- **Lucide Icons**: Professional icon library
-- **Vite**: Fast build tool
-- **Axios**: HTTP client with auth
-
-### AI/ML
-- **Qwen2.5:1.5B**: Efficient local LLM
-- **Chroma Vector Store**: Semantic search capabilities
-- **Intelligent chunking**: 1000 char chunks with 150 overlap
-- **Multi-query retrieval**: Enhanced context relevance
-
-## Project Structure
-
-```
-Rag/
-├── backend/                    # FastAPI server
-│   ├── main.py               # Main application & API endpoints
-│   ├── rag.py                # RAG logic & document processing
-│   ├── models.py              # Database models
-│   ├── schemas.py             # Pydantic schemas
-│   ├── auth.py                # Authentication logic
-│   └── database.py            # Database configuration
-├── frontend/                   # React application
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── Chat.jsx          # Chat interface with markdown rendering
-│   │   │   ├── AdminUpload.jsx   # Upload with real-time progress
-│   │   │   └── HistorySidebar.jsx # Session management
-│   │   ├── utils/
-│   │   │   ├── api.js            # API client with auth
-│   │   │   └── responseFormatter.jsx # Response formatting utilities
-│   │   └── App.jsx             # Main app component
-│   └── package.json
-├── chroma_db/                  # Vector database storage
-├── .gitignore                   # Git ignore rules
-└── README.md                   # This file
-```
+- **React**: Modern JavaScript framework
+- **TailwindCSS**: Utility-first CSS framework
+- **Axios**: HTTP client for API calls
+- **Lucide React**: Beautiful icons
 
 ## Quick Start
 
 ### Prerequisites
-- **Python 3.8+** for backend
-- **Node.js 16+** for frontend
-- **Ollama** running locally with Qwen2.5:1.5B model
+- Python 3.8+
+- Node.js 16+
+- Ollama (with qwen2.5:1.5b-instruct model)
 
 ### Installation
 
@@ -101,125 +46,91 @@ Rag/
    ```bash
    cd backend
    pip install -r requirements.txt
-   python main.py
    ```
 
 3. **Frontend Setup**
    ```bash
    cd frontend
    npm install
+   ```
+
+4. **Start Services**
+   ```bash
+   # Terminal 1 - Backend
+   cd backend
+   python main.py
+
+   # Terminal 2 - Frontend
+   cd frontend
    npm run dev
    ```
 
-4. **Access the Application**
-   - Frontend: http://localhost:5173
-   - Backend API: http://localhost:8000
-   - API Docs: http://localhost:8000/docs
+### Access
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:8000
+- **API Documentation**: http://localhost:8000/docs
 
-## Default Credentials
+### Default Credentials
+- **Admin**: admin@test.com / admin123
+- **User**: user@test.com / password123
 
-### Admin Account
-- **Email**: `admin@test.com`
-- **Password**: `admin123`
-- **Role**: Full access to all features
+## Project Structure
 
-### User Account
-- **Email**: `user@test.com`
-- **Password**: `password123`
-- **Role**: Chat access only
+```
+Rag/
+├── backend/
+│   ├── main.py              # FastAPI application
+│   ├── rag.py               # RAG logic and document processing
+│   ├── models.py            # Database models
+│   ├── schemas.py           # Pydantic schemas
+│   ├── auth.py              # Authentication logic
+│   └── requirements.txt      # Python dependencies
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── Chat.jsx
+│   │   │   ├── AdminUpload.jsx
+│   │   │   └── HistorySidebar.jsx
+│   │   ├── pages/
+│   │   │   ├── Dashboard.jsx
+│   │   │   └── Login.jsx
+│   │   └── utils/
+│   │       └── api.js
+│   ├── package.json
+│   └── tailwind.config.js
+├── docker-compose.yml
+└── README.md
+```
 
-## Usage Guide
+## Configuration
 
-### For Admins
-1. **Upload Documents**: Use the Admin tab to upload PDF/TXT files
-2. **Monitor Progress**: Watch real-time chunk processing progress
-3. **Manage Documents**: View, delete uploaded documents
-4. **Clear Database**: Reset system when needed
+### Environment Variables
+- `OLLAMA_URL`: http://localhost:11434
+- `CHROMA_DB_DIR`: ./chroma_db
+- `MODEL_NAME`: qwen2.5:1.5b-instruct
+- `JWT_SECRET`: supersecret
 
-### For Users
-1. **Start Chat**: Begin asking questions about uploaded documents
-2. **View History**: Access previous conversations via sidebar
-3. **Manage Sessions**: Create new chat sessions as needed
+## Features in Detail
 
-## Document Processing
+### RAG System
+- **Document Processing**: Intelligent chunking with semantic awareness
+- **Vector Storage**: ChromaDB for fast similarity search
+- **Multi-Query Retrieval**: Enhanced accuracy with query expansion
+- **Source Attribution**: Automatic citation with page numbers
 
-### Supported Formats
-- **PDF files**: `.pdf` (including complex PDFs like `.djvu.pdf`)
-- **Text files**: `.txt`
-- **Intelligent chunking**: 1000 characters with 150 overlap
-- **Batch processing**: 50 chunks per batch for memory efficiency
+### Chat Interface
+- **WhatsApp-Style**: Familiar messaging interface
+- **Real-time Streaming**: Instant response generation
+- **Source Toggle**: Collapsible source citations
+- **Beautiful Animations**: Smooth transitions and micro-interactions
+- **Responsive Design**: Works on all devices
 
-### Real-time Progress
-- **Start**: "Starting to process: filename.pdf"
-- **During**: "Processing batch 1/51: 50/2534 chunks"
-- **Complete**: "Successfully processed 2534 chunks"
-
-## Development
-
-### Environment Setup
-- **Ollama URL**: Set via `OLLAMA_URL` environment variable
-- **Default**: `http://localhost:11434`
-- **Model**: `qwen2.5:1.5b-instruct`
-
-### Database
-- **SQLite**: For user authentication and chat history
-- **ChromaDB**: For vector embeddings
-- **Automatic migrations**: Database setup on startup
-
-## Security Features
-
-- **JWT Authentication**: Secure token-based access
-- **Role-based Authorization**: Admin vs User permissions
-- **Session Management**: Secure session handling
-- **Input Validation**: Pydantic schemas for all inputs
-
-## API Endpoints
-
-### Authentication
-- `POST /login` - User authentication
-- `GET /me` - Get current user info
-
-### Chat
-- `POST /chat` - Send message (non-streaming)
-- `POST /chat/stream` - Send message (streaming)
-- `GET /history` - Get chat history
-- `GET /sessions` - Get user sessions
-
-### Admin
-- `POST /admin/upload` - Upload document (basic)
-- `POST /admin/upload-progress/{id}` - Upload with real-time progress
-- `GET /admin/upload-progress/{id}` - Get upload progress
-- `GET /admin/stats` - Get system statistics
-- `GET /admin/files` - List uploaded documents
-- `DELETE /admin/documents/{id}` - Delete document
-- `POST /admin/clear` - Clear database
-
-## Recent Improvements
-
-### Progress Tracking Fix
-- **Thread-safe communication**: asyncio.Queue for reliable updates
-- **Real-time chunk progress**: "21/51" style display
-- **Enhanced error handling**: Better cleanup and timeout management
-- **Visual progress bar**: Animated progress indicator
-
-### Response Formatting
-- **Enhanced prompts**: AI instructions for structured responses
-- **Markdown rendering**: Headers, bullets, numbered lists
-- **Visual hierarchy**: Better readability and organization
-- **Professional presentation**: Clean, modern UI
-
-## Contributing
-
-1. **Fork the repository**
-2. **Create feature branch**: `git checkout -b feature-name`
-3. **Make changes**: Follow existing code style
-4. **Test thoroughly**: Ensure all features work
-5. **Submit PR**: With clear description of changes
+### Document Management
+- **File Upload**: Support for PDF and text files
+- **Batch Processing**: Efficient handling of large documents
+- **Admin Panel**: Document statistics and management
+- **Clear Function**: Reset vector database
 
 ## License
 
-This project is licensed under the MIT License - see LICENSE file for details.
-
----
-
-**Ready for production use with real-time progress tracking and enhanced user experience!**
+MIT License - feel free to use and modify!

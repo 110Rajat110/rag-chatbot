@@ -1,6 +1,6 @@
-from fastapi import FastAPI, Depends, HTTPException, File, UploadFile
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form, status
 from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import os
 import shutil
@@ -8,7 +8,6 @@ import uuid
 import json
 from datetime import datetime
 from typing import List
-import asyncio
 
 import models
 import schemas
@@ -56,7 +55,7 @@ def startup_populate_db():
     db.commit()
 
 @app.post("/login", response_model=schemas.Token)
-def login(form_data: schemas.UserCreate, db: Session = Depends(get_db)):
+def login(form_data: schemas.UserLogin, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.email == form_data.email).first()
     if not user or not auth.verify_password(form_data.password, user.password_hash):
         raise HTTPException(
@@ -204,129 +203,6 @@ async def upload_document(file: UploadFile = File(...)):
         if os.path.exists(file_path):
             os.remove(file_path)
         raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
-
-@app.post("/admin/upload-progress/{upload_id}", dependencies=[Depends(auth.check_admin)])
-async def upload_document_with_progress(upload_id: str, file: UploadFile = File(...)):
-    if not os.path.exists("./temp"):
-        os.makedirs("./temp")
-    
-    file_path = f"./temp/{uuid.uuid4()}_{file.filename}"
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    
-    # Store upload info globally (in production, use Redis or database)
-    if not hasattr(upload_document_with_progress, 'uploads'):
-        upload_document_with_progress.uploads = {}
-    
-    # Create thread-safe progress queue for this upload
-    progress_queue = asyncio.Queue()
-    
-    upload_document_with_progress.uploads[upload_id] = {
-        'file_path': file_path,
-        'filename': file.filename,
-        'status': 'processing',
-        'progress_queue': progress_queue,
-        'latest_progress': {'type': 'pending'}
-    }
-    
-    # Start processing in background
-    asyncio.create_task(process_document_background(upload_id))
-    
-    return {"upload_id": upload_id, "status": "started"}
-
-async def process_document_background(upload_id: str):
-    """Background task to process document and update progress"""
-    upload_info = upload_document_with_progress.uploads.get(upload_id)
-    if not upload_info:
-        return
-    
-    file_path = upload_info['file_path']
-    filename = upload_info['filename']
-    progress_queue = upload_info['progress_queue']
-    
-    try:
-        # Update status to start
-        start_progress = {'type': 'start', 'filename': filename}
-        upload_info['latest_progress'] = start_progress
-        await progress_queue.put(start_progress)
-        
-        chunks_count = 0
-        
-        def progress_callback(progress_data):
-            # Update progress in upload info and queue
-            upload_info['latest_progress'] = progress_data
-            try:
-                # Create new task to put progress in queue (non-blocking)
-                asyncio.create_task(progress_queue.put(progress_data))
-            except:
-                pass  # Queue might be closed
-        
-        # Process document with progress callback
-        def process_with_progress():
-            nonlocal chunks_count
-            chunks_count = rag.process_document(file_path, progress_callback)
-        
-        # Run processing in thread pool to not block the event loop
-        await asyncio.get_event_loop().run_in_executor(None, process_with_progress)
-        
-        # Clean up file
-        if os.path.exists(file_path):
-            os.remove(file_path)
-        
-        # Save to database
-        db = next(get_db())
-        doc = models.UploadedDocument(filename=filename, chunks=chunks_count)
-        db.add(doc)
-        db.commit()
-        
-        # Mark upload as complete
-        upload_info['status'] = 'complete'
-        complete_progress = {'type': 'complete', 'filename': filename, 'chunks': chunks_count}
-        upload_info['latest_progress'] = complete_progress
-        await progress_queue.put(complete_progress)
-        
-    except Exception as e:
-        # Clean up file on error
-        if os.path.exists(file_path):
-            os.remove(file_path)
-        
-        # Mark upload as error
-        upload_info['status'] = 'error'
-        error_progress = {'type': 'error', 'message': str(e)}
-        upload_info['latest_progress'] = error_progress
-        try:
-            await progress_queue.put(error_progress)
-        except:
-            pass
-
-@app.get("/admin/upload-progress/{upload_id}", dependencies=[Depends(auth.check_admin)])
-async def get_upload_progress(upload_id: str):
-    """Get current progress of an upload"""
-    if not hasattr(upload_document_with_progress, 'uploads') or upload_id not in upload_document_with_progress.uploads:
-        raise HTTPException(status_code=404, detail="Upload not found")
-    
-    upload_info = upload_document_with_progress.uploads[upload_id]
-    
-    # Try to get latest progress from queue (non-blocking)
-    try:
-        progress_queue = upload_info['progress_queue']
-        # Get all available progress updates without blocking
-        latest_progress = upload_info['latest_progress']
-        
-        # Try to get any new updates
-        try:
-            while True:
-                new_progress = progress_queue.get_nowait()
-                latest_progress = new_progress
-                upload_info['latest_progress'] = latest_progress
-        except asyncio.QueueEmpty:
-            pass  # No more updates
-        
-        return latest_progress
-        
-    except Exception:
-        # Fallback to latest stored progress
-        return upload_info.get('latest_progress', {'type': 'pending'})
 
 @app.post("/admin/clear", dependencies=[Depends(auth.check_admin)])
 def clear_db(db: Session = Depends(get_db)):
